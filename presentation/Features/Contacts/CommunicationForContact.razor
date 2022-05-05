@@ -1,0 +1,125 @@
+@inject HttpClient http
+
+<div class="level">
+  <div class="level-left">&nbsp;</div>
+  <div class="level-right"><button type="button" class="button is-default" @onclick="ToggleShowAddCommunication">+
+      Communication</button>
+  </div>
+</div>
+<div hidden="@(!_showAddCommunication)">
+  <CommunicationDetailForm HasSaved="CommunicationDetailSavedHandler" HasCancelled="CommunicationDetailCancelledHandler"
+    communication="@Selectedcommunication">
+  </CommunicationDetailForm>
+</div>
+
+<table class="table is-fullwidth">
+  <tr>
+    <th></th>
+    <th>When</th>
+    <th>Description</th>
+    <th>I will follow up</th>
+    <th>Contact will follow up</th>
+  </tr>
+  @if (_isLoadingCommunications)
+  {
+    <tr>
+      <td colspan="6">Loading..</td>
+    </tr>
+  }
+  @foreach (var communication in _Communications)
+  {
+    <tr>
+      <td><a @onclick="@(()=>ShowDetails(communication))">Details</a></td>
+      <td>@communication.When</td>
+      <td>@communication.Description</td>
+      <td>@if (communication.ExpectMeToFollowUp)
+        {
+          <span class="has-text-success"><i class="fas fa-check fa-2x"></i></span>
+        }
+      </td>
+      <td>
+        @if (communication.ExpectContactToFollowUp)
+        {
+          <span class="has-text-success"><i class="fas fa-check fa-2x"></i></span>
+        }
+      </td>
+    </tr>
+  }
+</table>
+
+@code {
+  [CascadingParameter]
+  public string ApiBaseUrl { get; set; } = "";
+  [Parameter]
+  public int ContactId { get; set; } = 0;
+  private IEnumerable<CommunicationDto> _Communications = new List<CommunicationDto>();
+  private bool _showAddCommunication = false;
+  private bool _isLoadingCommunications = false;
+  private CommunicationDto Selectedcommunication { get; set; } = new CommunicationDto();
+
+  protected override async Task OnInitializedAsync()
+  {
+    await LoadCommunicationsForContact();
+
+    // When child components use Selectedcommunication they need to know which contact to work against
+    Selectedcommunication.ContactId = ContactId;
+  }
+
+  public async Task LoadCommunicationsForContact()
+  {
+    _isLoadingCommunications = true;
+    try
+    {
+      _Communications = await
+      http.GetFromJsonAsync<IEnumerable<CommunicationDto>>($"{ApiBaseUrl}communications/contacts/{ContactId}")
+      ?? new List<CommunicationDto>();
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error loading contact communications for this contact {ContactId}. {ex.FriendlyMessage()}");
+    }
+    finally
+    {
+      _isLoadingCommunications = false;
+    }
+  }
+
+  public void ToggleShowAddCommunication()
+  {
+    _showAddCommunication = !_showAddCommunication;
+
+    if (_showAddCommunication == false)
+    {
+      Selectedcommunication = new CommunicationDto()
+      {
+        ContactId = ContactId
+      };
+    }
+  }
+
+  public async Task CommunicationDetailSavedHandler(bool success)
+  {
+    if (success)
+    {
+      ToggleShowAddCommunication();
+      await LoadCommunicationsForContact();
+    }
+    else
+    {
+      // TODO
+      Console.WriteLine("Failed to save the communication.");
+    }
+  }
+
+  public void CommunicationDetailCancelledHandler()
+  {
+    ToggleShowAddCommunication();
+  }
+
+  public void ShowDetails(CommunicationDto communication)
+  {
+    _showAddCommunication = false;
+    Selectedcommunication = communication;
+    _showAddCommunication = true;
+  }
+}

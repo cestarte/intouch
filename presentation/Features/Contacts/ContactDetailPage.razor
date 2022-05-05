@@ -1,0 +1,145 @@
+@page "/contacts/{Id:int}"
+@inject HttpClient http
+
+<PageTitle>In Touch - Contact Detail</PageTitle>
+
+<section class="hero is-primary is-small">
+  <div class="hero-body">
+    <div class="container">
+      <p class="title">Contact Detail</p>
+      <p class="subtitle">@(_contact.Name ?? "")</p>
+    </div>
+  </div>
+  <div class="hero-foot">
+    <div class="container">
+      <MainNavbar />
+    </div>
+  </div>
+</section>
+<div class="container">
+  <div class="level">
+    <div class="level-left">&nbsp;</div>
+    <div class="level-right">
+      <a @onclick="ConfirmDelete">Delete</a> this contact.
+    </div>
+  </div>
+
+  <div class="mt-4" hidden="@(_isLoadingContact)">
+    <ContactDetailForm Id="@Id" Name="@_contact.Name" Description="@_contact.Description" Created="@_contact.Created"
+      Modified="@_contact.Modified" HasCancelled="ContactDetailCancelledHandler" HasSaved="ContactDetailSavedHandler">
+    </ContactDetailForm>
+  </div>
+
+  <div class="mt-4">
+    <p class="title is-3">Contact Methods</p>
+    <ContactMethodsForContact ContactId="@Id"></ContactMethodsForContact>
+  </div>
+
+  <div class="mt-4">
+    <p class="title is-3">Communication</p>
+    <CommunicationForContact ContactId="@Id"></CommunicationForContact>
+  </div>
+
+</div>
+
+<div class="modal" hidden="@(!_showDeleteConfirmation)">
+  <div class="modal-background"></div>
+
+  <div class="modal-content">
+    <div class="box">
+      <!-- TODO -->
+      <p>Do you really want to delete this contact?</p>
+    </div>
+  </div>
+
+  <button class="modal-close is-large" aria-label="close"></button>
+</div>
+
+@code {
+  [CascadingParameter]
+  public string ApiBaseUrl { get; set; } = "";
+  [Parameter]
+  public int Id { get; set; } = 0;
+  public bool _showDeleteConfirmation = false;
+  public ContactDto _contact = new ContactDto();
+  public ContactDto _contactOriginal = new ContactDto();
+
+  private bool _isLoadingContact = false;
+
+  protected override async Task OnInitializedAsync()
+  {
+    await LoadContact();
+  }
+
+  public async Task LoadContact()
+  {
+    _isLoadingContact = true;
+    try
+    {
+      _contact = await http.GetFromJsonAsync<ContactDto>($"{ApiBaseUrl}contacts/{Id}")
+      ?? new ContactDto();
+      _contactOriginal.CopyValuesFrom(_contact);
+    }
+    catch (HttpRequestException ex)
+    {
+      Console.WriteLine($"Error loading contact {Id}. {ex.FriendlyMessage()}");
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error loading contact {Id}. {ex.FriendlyMessage()}");
+    }
+    finally
+    {
+      _isLoadingContact = false;
+    }
+  }
+
+  public async Task ContactDetailSavedHandler(bool success)
+  {
+    if (success)
+    {
+      // TODO toast
+      Console.WriteLine("Successfully saved the contact.");
+    }
+    else
+    {
+      // TODO toast
+      Console.WriteLine("Failed to save the contact.");
+    }
+  }
+
+  public void ContactDetailCancelledHandler()
+  {
+    // TODO toast
+    _contact.CopyValuesFrom(_contactOriginal);
+  }
+
+  public void ConfirmDelete()
+  {
+    _showDeleteConfirmation = true;
+  }
+
+  public async Task PerformDelete()
+  {
+    try
+    {
+      var response = await http.DeleteAsync($"{ApiBaseUrl}contacts/{Id}");
+      if (response.IsSuccessStatusCode)
+      {
+        await LoadContact();
+      }
+    }
+    catch (HttpRequestException ex)
+    {
+      Console.WriteLine($"Error deleting contact {Id}. {ex.FriendlyMessage()}");
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error deleting contact {Id}. {ex.FriendlyMessage()}");
+    }
+    finally
+    {
+      _showDeleteConfirmation = false;
+    }
+  }
+}

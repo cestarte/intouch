@@ -1,0 +1,122 @@
+@inject HttpClient http
+<div class="level">
+  <div class="level-left">&nbsp;</div>
+  <div class="level-right"><button type="button" class="button is-default" @onclick="@(()=>ShowEmptyDetails())">+
+      Contact Method</button>
+  </div>
+
+</div>
+<div hidden="@(!_showAddContactMethod)">
+  <ContactMethodDetailForm HasSaved="ContactMethodDetailSavedHandler" HasCancelled="ContactMethodDetailCancelledHandler"
+    Method="@SelectedMethod">
+  </ContactMethodDetailForm>
+</div>
+
+<table class="table is-fullwidth">
+  <tr>
+    <th></th>
+    <th>Type</th>
+    <th>Value</th>
+    <th>Note</th>
+  </tr>
+  @if (_isLoadingContactMethods)
+  {
+    <tr>
+      <td colspan="6">Loading..</td>
+    </tr>
+  }
+  @foreach (var method in _contactMethods)
+  {
+    <tr>
+      <td><a @onclick="@(()=>ShowDetails(method))">Details</a></td>
+      <td>@method.Type</td>
+      <td>@method.Value</td>
+      <td>@method.Note</td>
+    </tr>
+  }
+</table>
+
+@code {
+  [CascadingParameter]
+  public string ApiBaseUrl { get; set; } = "";
+  [Parameter]
+  public int ContactId { get; set; } = 0;
+  private IEnumerable<ContactMethodDto> _contactMethods = new List<ContactMethodDto>();
+  private bool _showAddContactMethod = false;
+  private bool _isLoadingContactMethods = false;
+  private ContactMethodDto SelectedMethod { get; set; } = new ContactMethodDto();
+
+  protected override async Task OnInitializedAsync()
+  {
+    await LoadContactMethodsForContact();
+
+    // When child components use SelectedMethod they need to know which contact to work against
+    SelectedMethod.ContactId = ContactId;
+  }
+
+  public async Task LoadContactMethodsForContact()
+  {
+    _isLoadingContactMethods = true;
+    try
+    {
+      _contactMethods = await
+      http.GetFromJsonAsync<IEnumerable<ContactMethodDto>>($"{ApiBaseUrl}contactmethods/contacts/{ContactId}")
+      ?? new List<ContactMethodDto>();
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error loading contact methods for this contact {ContactId}. {ex.FriendlyMessage()}");
+    }
+    finally
+    {
+      _isLoadingContactMethods = false;
+    }
+  }
+
+  public void ToggleShowAddContactMethod()
+  {
+    _showAddContactMethod = !_showAddContactMethod;
+
+    @* if (_showAddContactMethod == false)
+      {
+      SelectedMethod = new ContactMethodDto()
+      {
+      ContactId = ContactId
+      };
+      } *@
+  }
+
+  public async Task ContactMethodDetailSavedHandler(bool success)
+  {
+    if (success)
+    {
+      ToggleShowAddContactMethod();
+      await LoadContactMethodsForContact();
+    }
+    else
+    {
+      // TODO
+      Console.WriteLine("Failed to save the contact method.");
+    }
+  }
+
+  public void ContactMethodDetailCancelledHandler()
+  {
+    ToggleShowAddContactMethod();
+  }
+
+  public void ShowDetails(ContactMethodDto method)
+  {
+    _showAddContactMethod = false;
+    SelectedMethod = method;
+    _showAddContactMethod = true;
+  }
+
+  public void ShowEmptyDetails()
+  {
+    _showAddContactMethod = false;
+    SelectedMethod = new ContactMethodDto();
+    SelectedMethod.ContactId = ContactId;
+    _showAddContactMethod = true;
+  }
+}

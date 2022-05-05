@@ -1,0 +1,58 @@
+<div class="notification is-primary is-light" hidden="@(!_isLoading)">
+  Loading...
+</div>
+
+<table class="table is-fullwidth" hidden="@_isLoading">
+  <tr>
+    <th>Name</th>
+    <th>Description</th>
+    <th>When</th>
+    <th>Last Communication</th>
+    <th># Comm.</th>
+  </tr>
+
+  @foreach (var r in _records)
+  {
+    <tr>
+      <td><a href="/contacts/@r!.ContactId">@r.ContactName</a></td>
+      <td>@r.ContactDescription</td>
+      <td>@CorrespondenceCalculations.CalculateWhenText(r.When)</td>
+      <td>@r.LastCommunication</td>
+      <td>@r.NumCommunications</td>
+    </tr>
+  }
+</table>
+
+@inject HttpClient http
+@code {
+  [CascadingParameter]
+  public string ApiBaseUrl { get; set; } = "";
+  private IEnumerable<CorrespondenceDto?> _records = new List<CorrespondenceDto>();
+  private bool _isLoading = false;
+
+  protected override async Task OnInitializedAsync()
+  {
+    await LoadCorrespondence();
+  }
+
+  public async Task LoadCorrespondence()
+  {
+    _isLoading = true;
+    try
+    {
+      _records = await http.GetFromJsonAsync<IEnumerable<CorrespondenceDto?>>($"{ApiBaseUrl}correspondence/waitingonme")
+      ?? new List<CorrespondenceDto?>();
+    }
+    catch (Exception ex)
+    {
+      var message = "Failed to load correspondence for contacts waiting on me.";
+      Console.WriteLine($"{message} {ex.FriendlyMessage()}");
+    }
+    finally
+    {
+      _isLoading = false;
+    }
+  }
+
+
+}

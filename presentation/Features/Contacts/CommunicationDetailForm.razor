@@ -1,0 +1,128 @@
+@inject HttpClient http
+
+<div class="card">
+  <div class="card-content" hidden="@(!_showSavingMessage)">
+    Saving...
+  </div>
+  <div class="card-content" hidden="@(_showSavingMessage)">
+    <div class="field">
+      <label class="label">When</label>
+      <div class="control">
+        <input type="datetime" class="input" @bind="Communication.When"
+          max="@(DateTime.Now.Date.ToShortDateString())" />
+      </div>
+      <p class="help is-danger">When the communication happened is required.</p>
+    </div>
+
+    <div class="field">
+      <label class="label">Description</label>
+      <div class="control">
+        <textarea class="textarea" @bind="Communication.Description" placeholder="What did you discuss?"></textarea>
+      </div>
+      <p class="help is-danger">Description is required.</p>
+    </div>
+
+    <div class="field">
+      <label class="label">I should follow up.</label>
+      <div class="control">
+        <input type="checkbox" @bind="Communication.ExpectMeToFollowUp" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label">I expect the contact to follow up.</label>
+      <div class="control">
+        <input type="checkbox" @bind="Communication.ExpectContactToFollowUp" />
+      </div>
+    </div>
+
+    <div class="field" hidden="@(Communication.Id == 0)">
+      <label class="label">Created</label>
+      <div class="control">
+        <input type="date" class="input" @bind="Communication.Created" disabled></input>
+      </div>
+    </div>
+
+    <div class="field" hidden="@(Communication.Id == 0)">
+      <label class="label">Modified</label>
+      <div class="control">
+        <input type="date" class="input" @bind="Communication.Modified" disabled></input>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-footer" hidden="@(_showSavingMessage)">
+    <a @onclick="OnSave" class="card-footer-item">Save</a>
+    <a @onclick="OnCancel" class="card-footer-item">Cancel</a>
+  </div>
+</div>
+
+
+
+@code {
+  [CascadingParameter]
+  public string ApiBaseUrl { get; set; } = "";
+
+  [Parameter]
+  public EventCallback<bool> HasSaved { get; set; }
+
+  [Parameter]
+  public EventCallback HasCancelled { get; set; }
+
+
+  [Parameter]
+  public CommunicationDto Communication { get; set; } = new CommunicationDto();
+
+  private bool _showSavingMessage = false;
+
+  private async Task OnCancel()
+  {
+    await HasCancelled.InvokeAsync();
+  }
+
+  private async Task OnSave()
+  {
+    _showSavingMessage = true;
+    bool success = false;
+
+    if (Communication.Id == 0)
+    {
+      success = await PostNewCommunication();
+    }
+    else
+    {
+      success = await PutCommunicationChange();
+    }
+
+    _showSavingMessage = false;
+    await HasSaved.InvokeAsync(success);
+  }
+
+  public async Task<bool> PostNewCommunication()
+  {
+    try
+    {
+      var response = await http.PostAsJsonAsync($"{ApiBaseUrl}communications", Communication);
+      return response.IsSuccessStatusCode;
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"ERROR: {ex.FriendlyMessage()}");
+      return false;
+    }
+  }
+
+  public async Task<bool> PutCommunicationChange()
+  {
+    try
+    {
+      var response = await http.PutAsJsonAsync($"{ApiBaseUrl}communications/{Communication.Id}", Communication);
+      return response.IsSuccessStatusCode;
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"ERROR: {ex.FriendlyMessage()}");
+      return false;
+    }
+  }
+}

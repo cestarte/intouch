@@ -1,0 +1,156 @@
+@inject HttpClient http
+
+<div class="card">
+  <div class="card-content" hidden="@(!_showSavingMessage)">
+    Saving...
+  </div>
+  <div class="card-content" hidden="@(_showSavingMessage)">
+    <div class="field">
+      <label class="label">Name</label>
+      <div class="control">
+        <input class="input" @bind="Name" type="text" placeholder="Name of contact">
+      </div>
+      <p class="help is-danger" hidden="@(!_showNameHelp)">Name of a business or individual is required.</p>
+    </div>
+
+    <div class="field">
+      <label class="label">Description</label>
+      <div class="control">
+        <textarea class="textarea" @bind="Description" placeholder="What is your relationship?"></textarea>
+      </div>
+    </div>
+
+    <div class="field" hidden="@(Id == 0)">
+      <label class="label">Created</label>
+      <div class="control">
+        <input type="date" class="input" @bind="Created" disabled></input>
+      </div>
+    </div>
+
+    <div class="field" hidden="@(Id == 0)">
+      <label class="label">Modified</label>
+      <div class="control">
+        <input type="date" class="input" @bind="Modified" disabled></input>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-footer" hidden="@(_showSavingMessage)">
+    <a @onclick="OnSave" class="card-footer-item">Save</a>
+    <a @onclick="OnCancel" class="card-footer-item">Cancel</a>
+  </div>
+</div>
+
+
+
+@code {
+  [CascadingParameter]
+  public string ApiBaseUrl { get; set; } = "";
+
+  [Parameter]
+  public EventCallback<bool> HasSaved { get; set; }
+
+  [Parameter]
+  public EventCallback HasCancelled { get; set; }
+
+  [Parameter]
+  public int Id { get; set; } = 0;
+
+  [Parameter]
+  public string Description { get; set; } = "";
+
+  [Parameter]
+  public DateTime Created { get; set; } = DateTime.MinValue;
+  [Parameter]
+  public DateTime Modified { get; set; } = DateTime.MinValue;
+
+  [Parameter]
+  public string Name { get; set; } = "";
+
+  private bool _showNameHelp = false;
+  private bool _showSavingMessage = false;
+
+  private async Task OnCancel()
+  {
+    Name = "";
+    Description = "";
+
+    await HasCancelled.InvokeAsync();
+  }
+
+  private async Task OnSave()
+  {
+    if (!IsValid())
+    {
+      return;
+    }
+    _showSavingMessage = true;
+    bool success = false;
+
+    if (Id == 0)
+    {
+      success = await PostNewContact();
+    }
+    else
+    {
+      success = await PutContactChange();
+    }
+
+    _showSavingMessage = false;
+    await HasSaved.InvokeAsync(success);
+  }
+
+  private bool IsValid()
+  {
+    if (String.IsNullOrWhiteSpace("Name"))
+    {
+      _showNameHelp = true;
+    }
+    else
+    {
+      _showNameHelp = false;
+    }
+
+    return !_showNameHelp;
+  }
+
+
+  public async Task<bool> PostNewContact()
+  {
+    var contact = new ContactDto();
+    contact.Name = Name;
+    contact.Description = Description;
+
+    try
+    {
+      var response = await http.PostAsJsonAsync($"{ApiBaseUrl}contacts", contact);
+      var result = await response.Content.ReadFromJsonAsync<ContactDto>();
+      return true;
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"ERROR: {ex.ToString()}");
+      return false;
+    }
+  }
+
+  public async Task<bool> PutContactChange()
+  {
+    var contact = new ContactDto();
+    contact.Id = Id;
+    contact.Name = Name;
+    contact.Description = Description;
+
+    try
+    {
+      var response = await http.PutAsJsonAsync($"{ApiBaseUrl}contacts/{Id}", contact);
+      var result = await response.Content.ReadFromJsonAsync<ContactDto>();
+      return true;
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"ERROR: {ex.ToString()}");
+      return false;
+    }
+  }
+}

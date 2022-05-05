@@ -1,0 +1,121 @@
+@inject HttpClient http
+
+<div class="card">
+  <div class="card-content" hidden="@(!_showSavingMessage)">
+    Saving...
+  </div>
+  <div class="card-content" hidden="@(_showSavingMessage)">
+    <div class="field">
+      <label class="label">Type</label>
+      <div class="control">
+        <input class="input" @bind="Method.Type" type="text"
+          placeholder="Phone, Email, Discord, Teams, Physical Address, etc">
+      </div>
+      <p class="help is-danger" hidden="@(!_showTypeHelp)">Contact method type is required.</p>
+    </div>
+
+    <div class="field">
+      <label class="label">Value</label>
+      <div class="control">
+        <input class="input" @bind="Method.Value" placeholder="(555)123-4567 #2"></input>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label">Note</label>
+      <div class="control">
+        <textarea class="textarea" @bind="Method.Note"></textarea>
+      </div>
+    </div>
+
+    <div class="field" hidden="@(Method.Id == 0)">
+      <label class="label">Created</label>
+      <div class="control">
+        <input type="date" class="input" @bind="Method.Created" disabled></input>
+      </div>
+    </div>
+
+    <div class="field" hidden="@(Method.Id == 0)">
+      <label class="label">Modified</label>
+      <div class="control">
+        <input type="date" class="input" @bind="Method.Modified" disabled></input>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-footer" hidden="@(_showSavingMessage)">
+    <a @onclick="OnSave" class="card-footer-item">Save</a>
+    <a @onclick="OnCancel" class="card-footer-item">Cancel</a>
+  </div>
+</div>
+
+
+
+@code {
+  [CascadingParameter]
+  public string ApiBaseUrl { get; set; } = "";
+
+  [Parameter]
+  public EventCallback<bool> HasSaved { get; set; }
+
+  [Parameter]
+  public EventCallback HasCancelled { get; set; }
+
+
+  [Parameter]
+  public ContactMethodDto Method { get; set; } = new ContactMethodDto();
+
+  private bool _showTypeHelp = false;
+  private bool _showSavingMessage = false;
+
+  private async Task OnCancel()
+  {
+    await HasCancelled.InvokeAsync();
+  }
+
+  private async Task OnSave()
+  {
+    _showSavingMessage = true;
+    bool success = false;
+
+    if (Method.Id == 0)
+    {
+      success = await PostNewContactMethod();
+    }
+    else
+    {
+      success = await PutContactMethodChange();
+    }
+
+    _showSavingMessage = false;
+    await HasSaved.InvokeAsync(success);
+  }
+
+  public async Task<bool> PostNewContactMethod()
+  {
+    try
+    {
+      var response = await http.PostAsJsonAsync($"{ApiBaseUrl}contactmethods", Method);
+      return response.IsSuccessStatusCode;
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"ERROR: {ex.FriendlyMessage()}");
+      return false;
+    }
+  }
+
+  public async Task<bool> PutContactMethodChange()
+  {
+    try
+    {
+      var response = await http.PutAsJsonAsync($"{ApiBaseUrl}contactmethods/{Method.Id}", Method);
+      return response.IsSuccessStatusCode;
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"ERROR: {ex.FriendlyMessage()}");
+      return false;
+    }
+  }
+}
