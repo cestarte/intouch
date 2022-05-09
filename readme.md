@@ -1,6 +1,8 @@
 # In Touch
 
-A simple communication tracker for people who don't need or want a big CRM. This tool started as a weekend project to when I realized I needed a simple way to track the outcome of conversations with clients and vendors.
+A correspondence tracker for people who need a simple way to see who owes them a follow up and who they owe the same.
+
+This project doesn't aim to compete with any large CRM. It's just a simple app driven primarily by my immediate needs. Take a look at the [future plans](./future.md) and feel free to send your own suggestions.
 
 # Important
 
