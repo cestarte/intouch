@@ -151,7 +151,7 @@
     if (success)
     {
       _showAddContact = false;
-      await LoadAllContacts();
+      _contacts = await LoadAllContacts();
       // update the filter in case we need to display a new contact
       _filteredContacts = FilterContactsByCollection(_selectedCollectionId, _contacts);
     }
