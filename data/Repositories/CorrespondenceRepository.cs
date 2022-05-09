@@ -5,7 +5,8 @@ using Microsoft.Extensions.Options; // IOptions
 
 namespace data.Repositories;
 
-public interface ICorrespondenceRepository {
+public interface ICorrespondenceRepository
+{
   Task<IEnumerable<CorrespondenceDto?>> Everything();
 
   Task<IEnumerable<CorrespondenceDto?>> WhoIsWaitingOnMe();
@@ -13,7 +14,8 @@ public interface ICorrespondenceRepository {
   Task<IEnumerable<CorrespondenceDto?>> NoExpectedAction();
 }
 
-public class CorrespondenceRepository : ICorrespondenceRepository {
+public class CorrespondenceRepository : ICorrespondenceRepository
+{
   private string _connectionString { get; set; } = "";
 
   public CorrespondenceRepository(IOptions<ConnectionStrings> connectionStrings)
@@ -32,7 +34,7 @@ public class CorrespondenceRepository : ICorrespondenceRepository {
       comm.Id AS LastCommunicationId,
       comm.[When],
 	    (JULIANDAY('now') - JULIANDAY(comm.[When])) AS DaysSinceWhen,
-      comm.Description AS LastCommunication,
+      SUBSTR(comm.Description, 0, 75) AS LastCommunication,
       comm.ExpectMeToFollowUp,
       comm.ExpectContactToFollowUp,
 	  comm.NumCommunications
@@ -50,7 +52,8 @@ public class CorrespondenceRepository : ICorrespondenceRepository {
       contact.Deleted = 0
     ORDER BY [When] DESC, [Name] ASC;
     ";
-    using (var context = new SqliteConnection(_connectionString)) {
+    using (var context = new SqliteConnection(_connectionString))
+    {
       return await context.QueryAsync<CorrespondenceDto?>(sql);
     }
   }
@@ -64,7 +67,7 @@ public class CorrespondenceRepository : ICorrespondenceRepository {
       comm.Id AS LastCommunicationId,
       comm.[When],
 	    (JULIANDAY('now') - JULIANDAY(comm.[When])) AS DaysSinceWhen,
-      comm.Description AS LastCommunication,
+      SUBSTR(comm.Description, 0, 75) AS LastCommunication,
       comm.ExpectMeToFollowUp,
       comm.ExpectContactToFollowUp,
 	  comm.NumCommunications
@@ -82,7 +85,8 @@ public class CorrespondenceRepository : ICorrespondenceRepository {
       contact.Deleted = 0 AND ExpectMeToFollowUp = 1
     ORDER BY [When] DESC, [Name] ASC
     ";
-    using (var context = new SqliteConnection(_connectionString)) {
+    using (var context = new SqliteConnection(_connectionString))
+    {
       return await context.QueryAsync<CorrespondenceDto?>(sql);
     }
   }
@@ -97,7 +101,7 @@ public class CorrespondenceRepository : ICorrespondenceRepository {
       comm.Id AS LastCommunicationId,
       comm.[When],
 	    (JULIANDAY('now') - JULIANDAY(comm.[When])) AS DaysSinceWhen,
-      comm.Description AS LastCommunication,
+      SUBSTR(comm.Description, 0, 75) AS LastCommunication,
       comm.ExpectMeToFollowUp,
       comm.ExpectContactToFollowUp,
 	  comm.NumCommunications
@@ -115,7 +119,8 @@ public class CorrespondenceRepository : ICorrespondenceRepository {
       contact.Deleted = 0 AND ExpectContactToFollowUp = 1
     ORDER BY [When] DESC, [Name] ASC
     ";
-    using (var context = new SqliteConnection(_connectionString)) {
+    using (var context = new SqliteConnection(_connectionString))
+    {
       return await context.QueryAsync<CorrespondenceDto?>(sql);
     }
   }
@@ -130,7 +135,7 @@ public class CorrespondenceRepository : ICorrespondenceRepository {
       comm.Id AS LastCommunicationId,
       comm.[When],
 	    (JULIANDAY('now') - JULIANDAY(comm.[When])) AS DaysSinceWhen,
-      comm.Description AS LastCommunication,
+      SUBSTR(comm.Description, 0, 75) AS LastCommunication,
       comm.ExpectMeToFollowUp,
       comm.ExpectContactToFollowUp,
 	  comm.NumCommunications
@@ -148,7 +153,8 @@ public class CorrespondenceRepository : ICorrespondenceRepository {
       contact.Deleted = 0 AND ExpectMeToFollowUp = 0 AND ExpectContactToFollowUp = 0
     ORDER BY [When] DESC, [Name] ASC
     ";
-    using (var context = new SqliteConnection(_connectionString)) {
+    using (var context = new SqliteConnection(_connectionString))
+    {
       return await context.QueryAsync<CorrespondenceDto?>(sql);
     }
   }
