@@ -25,8 +25,8 @@
   </div>
 
   <div class="mt-4" hidden="@(_isLoadingContact)">
-    <ContactDetailForm Id="@Id" Name="@_contact.Name" Description="@_contact.Description" Created="@_contact.Created"
-      Modified="@_contact.Modified" HasCancelled="ContactDetailCancelledHandler" HasSaved="ContactDetailSavedHandler">
+    <ContactDetailForm TargetContact="_contact" HasCancelled="ContactDetailCancelledHandler"
+      HasSaved="ContactDetailSavedHandler">
     </ContactDetailForm>
   </div>
 
@@ -78,7 +78,7 @@
     {
       _contact = await http.GetFromJsonAsync<ContactDto>($"{ApiBaseUrl}contacts/{Id}")
       ?? new ContactDto();
-      _contactOriginal.CopyValuesFrom(_contact);
+      _contactOriginal = _contact;
     }
     catch (HttpRequestException ex)
     {
@@ -100,6 +100,7 @@
     {
       // TODO toast
       Console.WriteLine("Successfully saved the contact.");
+      await LoadContact();
     }
     else
     {
@@ -111,7 +112,7 @@
   public void ContactDetailCancelledHandler()
   {
     // TODO toast
-    _contact.CopyValuesFrom(_contactOriginal);
+    _contact = _contactOriginal;
   }
 
   public void ConfirmDelete()
@@ -128,10 +129,6 @@
       {
         await LoadContact();
       }
-    }
-    catch (HttpRequestException ex)
-    {
-      Console.WriteLine($"Error deleting contact {Id}. {ex.FriendlyMessage()}");
     }
     catch (Exception ex)
     {

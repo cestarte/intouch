@@ -8,29 +8,51 @@
     <div class="field">
       <label class="label">Name</label>
       <div class="control">
-        <input class="input" @bind="Name" type="text" placeholder="Name of contact">
+        <input class="input" @bind="TargetContact.Name" type="text" placeholder="Name of contact">
       </div>
-      <p class="help is-danger" hidden="@(!_showNameHelp)">Name of a business or individual is required.</p>
+      <p class="help is-danger">Name of a business or individual is required.</p>
     </div>
 
     <div class="field">
       <label class="label">Description</label>
       <div class="control">
-        <textarea class="textarea" @bind="Description" placeholder="What is your relationship?"></textarea>
+        <textarea class="textarea" @bind="TargetContact.Description"
+          placeholder="What is your relationship?"></textarea>
       </div>
     </div>
 
-    <div class="field" hidden="@(Id == 0)">
+    <div class="field">
+      <label class="label">Collection</label>
+      <p class="control">
+        <span class="select">
+          <select @bind="TargetContact.CollectionId">
+            @foreach (var collection in _collections)
+            {
+              if (DefaultCollectionId != null && collection.Id == DefaultCollectionId)
+              {
+                <option value="@collection.Id" selected>@collection.Name</option>
+              }
+              else
+              {
+                <option value="@collection.Id">@collection.Name</option>
+              }
+            }
+          </select>
+        </span>
+      </p>
+    </div>
+
+    <div class="field" hidden="@(TargetContact.Id == 0)">
       <label class="label">Created</label>
       <div class="control">
-        <input type="date" class="input" @bind="Created" disabled></input>
+        <input type="date" class="input" @bind="TargetContact.Created" disabled></input>
       </div>
     </div>
 
-    <div class="field" hidden="@(Id == 0)">
+    <div class="field" hidden="@(TargetContact.Id == 0)">
       <label class="label">Modified</label>
       <div class="control">
-        <input type="date" class="input" @bind="Modified" disabled></input>
+        <input type="date" class="input" @bind="TargetContact.Modified" disabled></input>
       </div>
     </div>
   </div>
@@ -48,34 +70,46 @@
   public string ApiBaseUrl { get; set; } = "";
 
   [Parameter]
+  public ContactDto TargetContact { get; set; } = new ContactDto();
+
+  [Parameter]
   public EventCallback<bool> HasSaved { get; set; }
 
   [Parameter]
   public EventCallback HasCancelled { get; set; }
 
   [Parameter]
-  public int Id { get; set; } = 0;
+  public int? DefaultCollectionId { get; set; }
+  private IEnumerable<CollectionDto> _collections = new List<CollectionDto>();
 
-  [Parameter]
-  public string Description { get; set; } = "";
 
-  [Parameter]
-  public DateTime Created { get; set; } = DateTime.MinValue;
-  [Parameter]
-  public DateTime Modified { get; set; } = DateTime.MinValue;
-
-  [Parameter]
-  public string Name { get; set; } = "";
-
-  private bool _showNameHelp = false;
   private bool _showSavingMessage = false;
 
   private async Task OnCancel()
   {
-    Name = "";
-    Description = "";
-
     await HasCancelled.InvokeAsync();
+  }
+
+  protected override async Task OnInitializedAsync()
+  {
+    _collections = await LoadAllCollections();
+  }
+
+  public async Task<IEnumerable<CollectionDto>> LoadAllCollections()
+  {
+    IEnumerable<CollectionDto> collections = new List<CollectionDto>();
+    try
+    {
+      collections = await http.GetFromJsonAsync<IEnumerable<CollectionDto>>($"{ApiBaseUrl}collections")
+      ?? new List<CollectionDto>();
+    }
+    catch (Exception ex)
+    {
+      // TODO toast
+      Console.WriteLine($"[ContactDetailForm] Error loading all collections. {ex.FriendlyMessage()}");
+    }
+
+    return collections;
   }
 
   private async Task OnSave()
@@ -87,7 +121,7 @@
     _showSavingMessage = true;
     bool success = false;
 
-    if (Id == 0)
+    if (TargetContact.Id == 0)
     {
       success = await PostNewContact();
     }
@@ -102,54 +136,50 @@
 
   private bool IsValid()
   {
-    if (String.IsNullOrWhiteSpace("Name"))
+    bool isValid = true;
+    if (String.IsNullOrWhiteSpace(TargetContact.Name))
     {
-      _showNameHelp = true;
-    }
-    else
-    {
-      _showNameHelp = false;
+      Console.WriteLine("[IsValid] Name is required");
+      isValid = false;
     }
 
-    return !_showNameHelp;
+    if (TargetContact.CollectionId <= 0)
+    {
+      Console.WriteLine("[IsValid] Collection is required.");
+      isValid = false;
+    }
+
+    return isValid;
   }
 
 
   public async Task<bool> PostNewContact()
   {
-    var contact = new ContactDto();
-    contact.Name = Name;
-    contact.Description = Description;
-
     try
     {
-      var response = await http.PostAsJsonAsync($"{ApiBaseUrl}contacts", contact);
+      var response = await http.PostAsJsonAsync($"{ApiBaseUrl}contacts", TargetContact);
       var result = await response.Content.ReadFromJsonAsync<ContactDto>();
       return true;
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"ERROR: {ex.ToString()}");
+      // TODO toast
+      Console.WriteLine($"[ContactDetailForm] Failed to create contact. {ex.FriendlyMessage()}");
       return false;
     }
   }
 
   public async Task<bool> PutContactChange()
   {
-    var contact = new ContactDto();
-    contact.Id = Id;
-    contact.Name = Name;
-    contact.Description = Description;
-
     try
     {
-      var response = await http.PutAsJsonAsync($"{ApiBaseUrl}contacts/{Id}", contact);
+      var response = await http.PutAsJsonAsync($"{ApiBaseUrl}contacts/{TargetContact.Id}", TargetContact);
       var result = await response.Content.ReadFromJsonAsync<ContactDto>();
       return true;
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"ERROR: {ex.ToString()}");
+      Console.WriteLine($"[ContactDetailForm] Failed to update contact {TargetContact.Id}: {ex.FriendlyMessage()}");
       return false;
     }
   }

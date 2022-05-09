@@ -1,6 +1,11 @@
 namespace data;
 
-public record CorrespondenceDto {
+/// <summary>
+/// A rollup of recent communication with a contact.
+/// Used for dashboard summaries.
+/// </summary>
+public record CorrespondenceDto
+{
   public string ContactName { get; init; } = "";
   public string ContactDescription { get; init; } = "";
   public float DaysSinceWhen { get; init; } = -1;

@@ -1,7 +1,8 @@
 ﻿using data;
 
 namespace application.Dtos;
-public static class DtoExtensions {
+public static class DtoExtensions
+{
   public static ContactDto ToDto(this Contact self)
   {
     var target = new ContactDto();
@@ -11,12 +12,38 @@ public static class DtoExtensions {
     target.Name = self.Name;
     target.Description = self.Description;
     target.Deleted = self.Deleted;
+    target.CollectionId = self.CollectionId;
     return target;
   }
 
   public static Contact ToEntity(this ContactDto self)
   {
     var target = new Contact();
+    target.Id = self.Id;
+    target.Created = self.Created;
+    target.Modified = self.Modified;
+    target.Name = self.Name;
+    target.Description = self.Description;
+    target.Deleted = self.Deleted;
+    target.CollectionId = self.CollectionId;
+    return target;
+  }
+
+  public static CollectionDto ToDto(this Collection self)
+  {
+    var target = new CollectionDto();
+    target.Id = self.Id;
+    target.Created = self.Created;
+    target.Modified = self.Modified;
+    target.Name = self.Name;
+    target.Description = self.Description;
+    target.Deleted = self.Deleted;
+    return target;
+  }
+
+  public static Collection ToEntity(this CollectionDto self)
+  {
+    var target = new Collection();
     target.Id = self.Id;
     target.Created = self.Created;
     target.Modified = self.Modified;

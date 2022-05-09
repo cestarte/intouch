@@ -7,38 +7,34 @@ namespace api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class ContactsController : ControllerBase
+public class CollectionsController : ControllerBase
 {
-  private IContactRepository _contactRepo;
+  private ICollectionRepository _collectionRepo;
 
-  public ContactsController(IContactRepository repo)
+  public CollectionsController(ICollectionRepository repo)
   {
-    _contactRepo = repo;
+    _collectionRepo = repo;
   }
 
   // https://docs.microsoft.com/en-us/aspnet/core/web-api/action-return-types?view=aspnetcore-6.0
   [HttpGet]
   public async Task<IActionResult> Get()
   {
-    var contacts = await _contactRepo.GetAll();
-    return Ok(contacts.Select(x => x.ToDto()));
+    var entities = await _collectionRepo.GetAll();
+    return Ok(entities?.Select(x => x.ToDto()));
   }
 
   [HttpGet("{id}")]
   public async Task<IActionResult> Get(int id)
   {
-    var contact = await _contactRepo.GetById(id);
-    return Ok(contact?.ToDto());
+    var collection = await _collectionRepo.GetById(id);
+    return Ok(collection?.ToDto());
   }
 
   [HttpPost]
-  public async Task<IActionResult> Post(ContactDto dto)
+  public async Task<IActionResult> Post(CollectionDto dto)
   {
     if (String.IsNullOrWhiteSpace(dto.Name))
-    {
-      return BadRequest("Name is required.");
-    }
-    if (dto.CollectionId == null)
     {
       return BadRequest("Name is required.");
     }
@@ -49,24 +45,24 @@ public class ContactsController : ControllerBase
 
     try
     {
-      var id = await _contactRepo.Create(entity);
+      var id = await _collectionRepo.Create(entity);
       entity.Id = id;
       return Ok(entity.ToDto());
     }
     catch (Exception ex)
     {
-      Log.Error($"Error during POST a contact. {dto.ToString()} {ex.FriendlyMessage()}");
+      Log.Error($"Error during POST a collection. {dto.ToString()} {ex.FriendlyMessage()}");
       return new StatusCodeResult(StatusCodes.Status500InternalServerError);
     }
   }
 
   [HttpPut("{id}")]
-  public async Task<IActionResult> Put(int id, ContactDto dto)
+  public async Task<IActionResult> Put(int id, CollectionDto dto)
   {
-    Contact? entity = null;
+    Collection? entity = null;
     try
     {
-      entity = await _contactRepo.GetById(id);
+      entity = await _collectionRepo.GetById(id);
       if (entity == null)
       {
         return NoContent();
@@ -74,26 +70,25 @@ public class ContactsController : ControllerBase
     }
     catch (Exception ex)
     {
-      var message = $"Error reading contact {id} for a PUT.";
+      var message = $"Error reading collection {id} for a PUT.";
       Log.Error($"{message} {dto.ToString()} {ex.FriendlyMessage()}");
       return Problem(message);
     }
 
     entity.Name = dto.Name;
     entity.Description = dto.Description;
-    entity.CollectionId = dto.CollectionId;
     entity.Modified = DateTime.Now;
 
     try
     {
-      if (await _contactRepo.Update(entity))
-        return Ok(_contactRepo.GetById(id));
+      if (await _collectionRepo.Update(entity))
+        return Ok(_collectionRepo.GetById(id));
       else
         return Problem("Failed to update the entity.");
     }
     catch (Exception ex)
     {
-      var message = $"Error saving PUT contact {id}.";
+      var message = $"Error saving PUT collection {id}.";
       Log.Error($"{message} {dto.ToString()} {ex.FriendlyMessage()}");
       return Problem(message);
     }
@@ -104,18 +99,18 @@ public class ContactsController : ControllerBase
   {
     try
     {
-      if (await _contactRepo.SoftDelete(id))
+      if (await _collectionRepo.SoftDelete(id))
       {
         return Ok();
       }
       else
       {
-        return NoContent();
+        return NotFound();
       }
     }
     catch (Exception ex)
     {
-      var message = $"Error attempting to delete a contact. Id: {id}";
+      var message = $"Error attempting to delete a collection. Id: {id}";
       Log.Error($"{message} {ex.FriendlyMessage()}");
       return Problem(ex.FriendlyMessage());
     }

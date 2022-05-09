@@ -1,13 +1,12 @@
 ﻿namespace data;
 
 /// <summary>
-/// A contact is an entity (person or business) with
-/// which there is a desire to document correspondence.
+/// A collection holds contacts. One might have personal and
+/// business collections to keep the contact lists separate.
 /// </summary>
-public class Contact
+public class Collection
 {
   public int Id { get; set; }
-  public int CollectionId { get; set; }
   public string Name { get; set; } = "";
   public string? Description { get; set; }
   public DateTime Created { get; set; }

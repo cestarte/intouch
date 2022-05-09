@@ -18,6 +18,24 @@
 <br />
 
 <div class="container">
+  <div class="field">
+    <label class="label">Collection</label>
+    <p class="control has-icons-left">
+      <span class="select">
+        <select @onchange="OnChangeSelectedCollection">
+          <option>Everything</option>
+          @foreach (var collection in _collections)
+          {
+            <option value="@collection.Id">@collection.Name</option>
+          }
+        </select>
+      </span>
+      <span class="icon is-small is-left">
+        <i class="fas fa-filter"></i>
+      </span>
+    </p>
+  </div>
+
   <div class="level mt-4">
     <div class="level-left">&nbsp;</div>
     <div class="level-right"> <button type="button" class="button is-outlined" @onclick="ToggleAddContact">+ Add
@@ -26,8 +44,7 @@
 
   <div class="mt-4" hidden="@(!_showAddContact)">
     <ContactDetailForm HasSaved="ContactDetailSavedHandler" HasCancelled="ContactDetailCancelledHandler"
-      Description="@EditingDescription" Name="@EditingName" Id="@EditingContactId" Created="@EditingCreated"
-      Modified="@EditingModified">
+      TargetContact="@EditingContact" DefaultCollectionId="_selectedCollectionId">
     </ContactDetailForm>
   </div>
 
@@ -40,13 +57,13 @@
     @if (_isLoadingContacts)
     {
       <tr>
-        <td colspan="5">Loading..</td>
+        <td colspan="3">Loading..</td>
       </tr>
     }
-    @foreach (var contact in _contacts)
+    @foreach (var contact in _filteredContacts)
     {
       <tr>
-        <td><a href="/contacts/@contact.Id">Details</a></td>
+        <td><a href="/contacts/@contact.Id"><i class="fas fa-arrow-up-right-from-square"></i>Details</a></td>
         <td>@contact.Name</td>
         <td>@contact.Description</td>
       </tr>
@@ -57,40 +74,67 @@
 @code {
   [CascadingParameter]
   public string ApiBaseUrl { get; set; } = "";
-  public string EditingDescription { get; set; } = "";
-  public DateTime EditingCreated { get; set; }
-  public DateTime EditingModified { get; set; }
-  public string EditingName { get; set; } = "";
-  public int EditingContactId { get; set; } = 0;
+  private int? _selectedCollectionId = null;
+  private ContactDto EditingContact { get; set; } = new ContactDto();
   private IEnumerable<ContactDto> _contacts = new List<ContactDto>();
+  private IEnumerable<ContactDto> _filteredContacts = new List<ContactDto>();
+  private IEnumerable<CollectionDto> _collections = new List<CollectionDto>();
   private bool _showAddContact = false;
   private bool _isLoadingContacts = false;
+  private bool _isLoadingCollections = false;
+
 
   protected override async Task OnInitializedAsync()
   {
-    await LoadAllContacts();
+    _collections = await LoadAllCollections();
+    _contacts = await LoadAllContacts();
+
+    // on page load there's no filter applied
+    _filteredContacts = _contacts;
   }
 
-  public async Task LoadAllContacts()
+  public async Task<IEnumerable<CollectionDto>> LoadAllCollections()
   {
-    _isLoadingContacts = true;
+    _isLoadingCollections = true;
+    IEnumerable<CollectionDto> collections = new List<CollectionDto>();
     try
     {
-      _contacts = await http.GetFromJsonAsync<IEnumerable<ContactDto>>($"{ApiBaseUrl}contacts")
-      ?? new List<ContactDto>();
-    }
-    catch (HttpRequestException ex)
-    {
-      Console.WriteLine($"Error loading all contacts. {ex.FriendlyMessage()}");
+      collections = await http.GetFromJsonAsync<IEnumerable<CollectionDto>>($"{ApiBaseUrl}collections")
+      ?? new List<CollectionDto>();
     }
     catch (Exception ex)
     {
+      // TODO toast
+      Console.WriteLine($"Error loading all collections. {ex.FriendlyMessage()}");
+    }
+    finally
+    {
+      _isLoadingCollections = false;
+    }
+
+    return collections;
+  }
+
+  public async Task<IEnumerable<ContactDto>> LoadAllContacts()
+  {
+    IEnumerable<ContactDto> contacts = new List<ContactDto>();
+    _isLoadingContacts = true;
+    try
+    {
+      contacts = await http.GetFromJsonAsync<IEnumerable<ContactDto>>($"{ApiBaseUrl}contacts")
+      ?? new List<ContactDto>();
+    }
+    catch (Exception ex)
+    {
+      // TODO toast
       Console.WriteLine($"Error loading all contacts. {ex.FriendlyMessage()}");
     }
     finally
     {
       _isLoadingContacts = false;
     }
+
+    return contacts;
   }
 
   public void ToggleAddContact()
@@ -98,9 +142,7 @@
     _showAddContact = !_showAddContact;
     if (_showAddContact == false)
     {
-      EditingDescription = "";
-      EditingName = "";
-      EditingContactId = 0;
+      EditingContact = new ContactDto();
     }
   }
 
@@ -110,16 +152,35 @@
     {
       _showAddContact = false;
       await LoadAllContacts();
+      // update the filter in case we need to display a new contact
+      _filteredContacts = FilterContactsByCollection(_selectedCollectionId, _contacts);
     }
     else
     {
-      // TODO
-      Console.WriteLine("Failed to save the contact.");
+      // TODO toast
+      Console.WriteLine("[ContactDetailForm] Failed to save the contact.");
     }
   }
 
   public void ContactDetailCancelledHandler()
   {
-    _showAddContact = false;
+    ToggleAddContact();
+  }
+
+  public void OnChangeSelectedCollection(ChangeEventArgs eventArgs)
+  {
+    Console.WriteLine($"[OnChangeSelectedCollection] Value = {eventArgs.Value}");
+    int selectedVal;
+    Int32.TryParse(eventArgs.Value?.ToString(), out selectedVal);
+    _selectedCollectionId = selectedVal;
+    _filteredContacts = FilterContactsByCollection(_selectedCollectionId, _contacts);
+  }
+
+  public IEnumerable<ContactDto> FilterContactsByCollection(int? collectionId, IEnumerable<ContactDto> contacts)
+  {
+    if (collectionId == null || collectionId == 0)
+      return contacts;
+    else
+      return contacts.Where(x => x.CollectionId == collectionId);
   }
 }

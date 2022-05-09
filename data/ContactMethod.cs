@@ -1,6 +1,11 @@
 ﻿namespace data;
 
-public class ContactMethod {
+/// <summary>
+/// There may be multiple ways to get in touch with 
+/// a given contact. Ex: phone, email, physical address.
+/// </summary>
+public class ContactMethod
+{
   public int Id { get; set; }
   public string Type { get; set; } = "";
   public string Value { get; set; } = "";

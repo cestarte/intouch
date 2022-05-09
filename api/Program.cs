@@ -8,6 +8,7 @@ using Microsoft.Data.Sqlite;
 
 using System.Text.Json.Serialization;
 
+string corsPolicyName = "AllowOrigins";
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -25,10 +26,12 @@ builder.Services.AddTransient<IContactRepository, ContactRepository>();
 builder.Services.AddTransient<IContactMethodRepository, ContactMethodRepository>();
 builder.Services.AddTransient<ICommunicationRepository, CommunicationRepository>();
 builder.Services.AddTransient<ICorrespondenceRepository, CorrespondenceRepository>();
+builder.Services.AddTransient<ICollectionRepository, CollectionRepository>();
 
 
 builder.Services.AddControllers()
-    .AddJsonOptions(options => {
+    .AddJsonOptions(options =>
+    {
       options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
 // Swagger/OpenAPI https://aka.ms/aspnetcore/swashbuckle
@@ -36,21 +39,26 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // CORS step 1
-builder.Services.AddCors(p => p.AddPolicy("devcors", builder => {
-  builder.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
+builder.Services.AddCors(p => p.AddPolicy(corsPolicyName, policy =>
+{
+  policy.WithOrigins(builder.Configuration.GetSection("CORS:AllowedOrigins")
+    .Get<string[]>())
+    .AllowAnyMethod()
+    .AllowAnyHeader();
 }));
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment()) {
+if (app.Environment.IsDevelopment())
+{
   app.UseSwagger();
   app.MapSwagger();
   app.UseSwaggerUI();
 }
 
 // CORS part 2
-app.UseCors("devcors");
+app.UseCors(corsPolicyName);
 
 app.UseHttpsRedirection();
 
@@ -58,10 +66,15 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-try {
+try
+{
   app.Run();
-} catch (Exception ex) {
+}
+catch (Exception ex)
+{
   Log.Fatal(ex, "Host terminated unexpectedly.");
-} finally {
+}
+finally
+{
   Log.CloseAndFlush();
 }

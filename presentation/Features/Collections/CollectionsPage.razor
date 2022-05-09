@@ -1,0 +1,121 @@
+@page "/collections"
+@inject HttpClient http
+
+<PageTitle>In Touch - Collections</PageTitle>
+
+<section class="hero is-primary is-small">
+  <div class="hero-body">
+    <div class="container">
+      <p class="title">Collections</p>
+    </div>
+  </div>
+  <div class="hero-foot">
+    <div class="container">
+      <MainNavbar />
+    </div>
+  </div>
+</section>
+<br />
+
+<div class="container">
+  <div class="level mt-4">
+    <div class="level-left">&nbsp;</div>
+    <div class="level-right"> <button type="button" class="button is-outlined" @onclick="ToggleAddCollection">+ Add
+        Collection</button></div>
+  </div>
+
+  <div class="mt-4" hidden="@(!_showAddCollection)">
+    <CollectionDetailForm HasSaved="CollectionDetailSavedHandler" HasCancelled="CollectionDetailCancelledHandler"
+      Description="@EditingDescription" Name="@EditingName" Id="@EditingCollectionId" Created="@EditingCreated"
+      Modified="@EditingModified">
+    </CollectionDetailForm>
+  </div>
+
+  <table class="table is-fullwidth">
+    <tr>
+      <th></th>
+      <th>Name</th>
+      <th>Description</th>
+    </tr>
+    @if (_isLoadingCollections)
+    {
+      <tr>
+        <td colspan="5">Loading..</td>
+      </tr>
+    }
+    @foreach (var collection in _collections)
+    {
+      <tr>
+        <td><a href="/collections/@collection.Id">Details</a></td>
+        <td>@collection.Name</td>
+        <td>@collection.Description</td>
+      </tr>
+    }
+  </table>
+</div>
+
+@code {
+  [CascadingParameter]
+  public string ApiBaseUrl { get; set; } = "";
+  public string EditingDescription { get; set; } = "";
+  public DateTime EditingCreated { get; set; }
+  public DateTime EditingModified { get; set; }
+  public string EditingName { get; set; } = "";
+  public int EditingCollectionId { get; set; } = 0;
+  private IEnumerable<CollectionDto> _collections = new List<CollectionDto>();
+  private bool _showAddCollection = false;
+  private bool _isLoadingCollections = false;
+
+  protected override async Task OnInitializedAsync()
+  {
+    await LoadAllCollections();
+  }
+
+  public async Task LoadAllCollections()
+  {
+    _isLoadingCollections = true;
+    try
+    {
+      _collections = await http.GetFromJsonAsync<IEnumerable<CollectionDto>>($"{ApiBaseUrl}collections")
+      ?? new List<CollectionDto>();
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error loading all collections. {ex.FriendlyMessage()}");
+    }
+    finally
+    {
+      _isLoadingCollections = false;
+    }
+  }
+
+  public void ToggleAddCollection()
+  {
+    _showAddCollection = !_showAddCollection;
+    if (_showAddCollection == false)
+    {
+      EditingDescription = "";
+      EditingName = "";
+      EditingCollectionId = 0;
+    }
+  }
+
+  public async Task CollectionDetailSavedHandler(bool success)
+  {
+    if (success)
+    {
+      _showAddCollection = false;
+      await LoadAllCollections();
+    }
+    else
+    {
+      // TODO toast
+      Console.WriteLine("Failed to save the collection.");
+    }
+  }
+
+  public void CollectionDetailCancelledHandler()
+  {
+    _showAddCollection = false;
+  }
+}
