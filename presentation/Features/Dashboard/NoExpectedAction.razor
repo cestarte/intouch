@@ -15,9 +15,13 @@
   {
     <tr>
       <td><a href="/contacts/@r!.ContactId">@r.ContactName</a></td>
-      <td>@CorrespondenceCalculations.FormatDescriptionText(r.ContactDescription)</td>
-      <td>@CorrespondenceCalculations.CalculateWhenText(r.When)</td>
-      <td>@CorrespondenceCalculations.FormatDescriptionText(r.LastCommunication)</td>
+      <td>
+        <TableTextDisplay FullText="@r.ContactDescription" />
+      </td>
+      <td>@TableFormatters.FormatWhenText(r.When)</td>
+      <td>
+        <TableTextDisplay FullText="@r.LastCommunication" />
+      </td>
       <td>@r.NumCommunications</td>
     </tr>
   }

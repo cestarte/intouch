@@ -34,7 +34,7 @@ public class CorrespondenceRepository : ICorrespondenceRepository
       comm.Id AS LastCommunicationId,
       comm.[When],
 	    (JULIANDAY('now') - JULIANDAY(comm.[When])) AS DaysSinceWhen,
-      SUBSTR(comm.Description, 0, 75) AS LastCommunication,
+      comm.Description AS LastCommunication,
       comm.ExpectMeToFollowUp,
       comm.ExpectContactToFollowUp,
 	  comm.NumCommunications
@@ -67,7 +67,7 @@ public class CorrespondenceRepository : ICorrespondenceRepository
       comm.Id AS LastCommunicationId,
       comm.[When],
 	    (JULIANDAY('now') - JULIANDAY(comm.[When])) AS DaysSinceWhen,
-      SUBSTR(comm.Description, 0, 75) AS LastCommunication,
+      comm.Description AS LastCommunication,
       comm.ExpectMeToFollowUp,
       comm.ExpectContactToFollowUp,
 	  comm.NumCommunications
@@ -101,7 +101,7 @@ public class CorrespondenceRepository : ICorrespondenceRepository
       comm.Id AS LastCommunicationId,
       comm.[When],
 	    (JULIANDAY('now') - JULIANDAY(comm.[When])) AS DaysSinceWhen,
-      SUBSTR(comm.Description, 0, 75) AS LastCommunication,
+      comm.Description AS LastCommunication,
       comm.ExpectMeToFollowUp,
       comm.ExpectContactToFollowUp,
 	  comm.NumCommunications
@@ -135,7 +135,7 @@ public class CorrespondenceRepository : ICorrespondenceRepository
       comm.Id AS LastCommunicationId,
       comm.[When],
 	    (JULIANDAY('now') - JULIANDAY(comm.[When])) AS DaysSinceWhen,
-      SUBSTR(comm.Description, 0, 75) AS LastCommunication,
+      comm.Description AS LastCommunication,
       comm.ExpectMeToFollowUp,
       comm.ExpectContactToFollowUp,
 	  comm.NumCommunications

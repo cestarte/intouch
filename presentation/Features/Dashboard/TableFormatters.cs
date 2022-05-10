@@ -1,12 +1,16 @@
 
-public static class CorrespondenceCalculations
+public static class TableFormatters
 {
-  private static int MAX_STRING_LENGTH = 75;
+  /// <summary>
+  /// Used to elipse longer text fields in the 
+  /// TableTextDisplay razor component.
+  /// </summary>
+  public static readonly int MAX_DISPLAY_LENGTH = 75;
 
   /// <summary>
   /// Formats date and time with a few helper words.
   /// </summary>
-  public static string CalculateWhenText(DateTime when)
+  public static string FormatWhenText(DateTime when)
   {
     var dateText = when.ToShortDateString();
     var daysAgo = (DateTime.Now.Date - when.Date).Days;
@@ -29,11 +33,9 @@ public static class CorrespondenceCalculations
   /// </summary>
   public static string? FormatDescriptionText(string? text)
   {
-    if (text == null)
+    if (text == null || text.Length <= MAX_DISPLAY_LENGTH)
       return text;
-    else if (text.Length >= MAX_STRING_LENGTH)
-      text += "...";
 
-    return text;
+    return $"{text.Substring(0, MAX_DISPLAY_LENGTH)}...";
   }
 }

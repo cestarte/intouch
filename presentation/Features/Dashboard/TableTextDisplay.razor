@@ -1,0 +1,52 @@
+@if (_formattedText.Length <= TableFormatters.MAX_DISPLAY_LENGTH)
+{
+  <div>
+  <p>@_formattedText</p>
+</div>
+}
+else
+{
+  <div class="dropdown is-hoverable">
+  <div class="dropdown-trigger">
+    <div aria-haspopup="true" aria-controls="@_htmlId">
+      <p>@_formattedText</p>
+    </div>
+  </div>
+  <div class="dropdown-menu" id="@_htmlId" role="menu">
+    <div class="dropdown-content">
+      <div class="dropdown-item">
+        <p>@FullText</p>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+
+@using System.Text;
+@code {
+  [Parameter]
+  public string? FullText { get; set; }
+
+  private string? _htmlId;
+  private string _formattedText = "";
+
+  protected override void OnInitialized()
+  {
+    _formattedText = TableFormatters.FormatDescriptionText(FullText) ?? "";
+    _htmlId = GenerateRandomHtmlId();
+  }
+
+  public string GenerateRandomHtmlId()
+  {
+    const int numLetters = 10;
+    var sb = new StringBuilder();
+    var rand = new Random();
+    for (int i = 0; i < numLetters; i++)
+    {
+      sb.Append(Convert.ToChar(rand.Next(1, 26) + 65));
+    }
+
+    return sb.ToString();
+  }
+}
