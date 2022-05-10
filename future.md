@@ -1,10 +1,9 @@
-# Future plans
+# Future possibilities
 
   * Soft delete functionality
   * Upload files to a communication
   * Table sorting, filtering, and pagination
   * UI polish
-    * Text of the last communication will have a size limit on the dashboard page
     * Remember the last used collection
     * Move detail pane inside of tables (when routing to a new page isn't necessary)
   * Dashboard

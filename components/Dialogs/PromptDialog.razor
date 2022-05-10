@@ -1,0 +1,47 @@
+@if (Show)
+{
+  <div class="modal is-active">
+  <div class="modal-background" @onclick="Decline"></div>
+  <div class="modal-content">
+    <div class="box">
+      @ChildContent
+      <div class="level mt-4">
+        <div class="level-left">
+          <button class="button is-success is-outlined" @onclick="Approve">@ApproveText</button>
+
+        </div>
+        <div class="level-right">
+          <button class="button is-default is-outlined" @onclick="Decline">@DeclineText</button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <button class="modal-close is-large" aria-label="close"></button>
+</div>
+}
+
+@code {
+  [Parameter]
+  public string ApproveText { get; set; } = "Yes";
+  [Parameter]
+  public string DeclineText { get; set; } = "No";
+  [Parameter]
+  public RenderFragment? ChildContent { get; set; }
+  [Parameter]
+  public bool Show { get; set; }
+  [Parameter]
+  public EventCallback OnApprove { get; set; }
+  [Parameter]
+  public EventCallback OnDecline { get; set; }
+
+  public async Task Approve()
+  {
+    await OnApprove.InvokeAsync();
+  }
+
+  public async Task Decline()
+  {
+    await OnDecline.InvokeAsync();
+  }
+}

@@ -20,7 +20,7 @@
   <div class="level">
     <div class="level-left">&nbsp;</div>
     <div class="level-right">
-      <a @onclick="ConfirmDelete">Delete</a> this contact.
+      <a @onclick="OnDelete">Delete</a> this contact.
     </div>
   </div>
 
@@ -39,21 +39,10 @@
     <p class="title is-3">Communication</p>
     <CommunicationForContact ContactId="@Id"></CommunicationForContact>
   </div>
-
 </div>
 
-<div class="modal" hidden="@(!_showDeleteConfirmation)">
-  <div class="modal-background"></div>
-
-  <div class="modal-content">
-    <div class="box">
-      <!-- TODO -->
-      <p>Do you really want to delete this contact?</p>
-    </div>
-  </div>
-
-  <button class="modal-close is-large" aria-label="close"></button>
-</div>
+<PromptDialog Show="_showDeleteConfirmation" OnApprove="PerformDelete" OnDecline="CancelDelete"> Do you really want to
+  delete this contact? <strong>@_contact.Name</strong> </PromptDialog>
 
 @code {
   [CascadingParameter]
@@ -115,13 +104,22 @@
     _contact = _contactOriginal;
   }
 
-  public void ConfirmDelete()
+  public void OnDelete()
   {
     _showDeleteConfirmation = true;
+    StateHasChanged();
+    Console.WriteLine("[ContactDetailPage] Delete was clicked.");
+  }
+
+  public void CancelDelete()
+  {
+    _showDeleteConfirmation = false;
+    Console.WriteLine("[ContactDetailPage] Delete was cancelled.");
   }
 
   public async Task PerformDelete()
   {
+    Console.WriteLine("[ContactDetailPage] Performing delete..");
     try
     {
       var response = await http.DeleteAsync($"{ApiBaseUrl}contacts/{Id}");

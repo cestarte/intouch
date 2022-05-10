@@ -8,29 +8,30 @@
     <div class="field">
       <label class="label">Name</label>
       <div class="control">
-        <input class="input" @bind="Name" type="text" placeholder="Name of collection">
+        <input class="input" @bind="EditingCollection.Name" type="text" placeholder="Name of collection">
       </div>
-      <p class="help is-danger" hidden="@(!_showNameHelp)">Name of a business or individual is required.</p>
+      <p class="help is-danger" hidden="@(!_showNameHelp)">Name of collection is required.</p>
     </div>
 
     <div class="field">
       <label class="label">Description</label>
       <div class="control">
-        <textarea class="textarea" @bind="Description" placeholder="What is your relationship?"></textarea>
+        <textarea class="textarea" @bind="EditingCollection.Description"
+          placeholder="What is your relationship?"></textarea>
       </div>
     </div>
 
-    <div class="field" hidden="@(Id == 0)">
+    <div class="field" hidden="@(EditingCollection.Id == 0)">
       <label class="label">Created</label>
       <div class="control">
-        <input type="date" class="input" @bind="Created" disabled></input>
+        <input type="date" class="input" @bind="EditingCollection.Created" disabled></input>
       </div>
     </div>
 
-    <div class="field" hidden="@(Id == 0)">
+    <div class="field" hidden="@(EditingCollection.Id == 0)">
       <label class="label">Modified</label>
       <div class="control">
-        <input type="date" class="input" @bind="Modified" disabled></input>
+        <input type="date" class="input" @bind="EditingCollection.Modified" disabled></input>
       </div>
     </div>
   </div>
@@ -54,27 +55,13 @@
   public EventCallback HasCancelled { get; set; }
 
   [Parameter]
-  public int Id { get; set; } = 0;
-
-  [Parameter]
-  public string Description { get; set; } = "";
-
-  [Parameter]
-  public DateTime Created { get; set; } = DateTime.MinValue;
-  [Parameter]
-  public DateTime Modified { get; set; } = DateTime.MinValue;
-
-  [Parameter]
-  public string Name { get; set; } = "";
+  public CollectionDto EditingCollection { get; set; } = new CollectionDto();
 
   private bool _showNameHelp = false;
   private bool _showSavingMessage = false;
 
   private async Task OnCancel()
   {
-    Name = "";
-    Description = "";
-
     await HasCancelled.InvokeAsync();
   }
 
@@ -87,7 +74,7 @@
     _showSavingMessage = true;
     bool success = false;
 
-    if (Id == 0)
+    if (EditingCollection.Id == 0)
     {
       success = await PostNewCollection();
     }
@@ -117,33 +104,25 @@
 
   public async Task<bool> PostNewCollection()
   {
-    var collection = new CollectionDto();
-    collection.Name = Name;
-    collection.Description = Description;
-
     try
     {
-      var response = await http.PostAsJsonAsync($"{ApiBaseUrl}collections", collection);
+      var response = await http.PostAsJsonAsync($"{ApiBaseUrl}collections", EditingCollection);
       var result = await response.Content.ReadFromJsonAsync<CollectionDto>();
       return true;
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"ERROR: {ex.ToString()}");
+      // TODO toast
+      Console.WriteLine($"[CollectionDetailForm] Failed to create new collection! {ex.FriendlyMessage()}");
       return false;
     }
   }
 
   public async Task<bool> PutCollectionChange()
   {
-    var collection = new CollectionDto();
-    collection.Id = Id;
-    collection.Name = Name;
-    collection.Description = Description;
-
     try
     {
-      var response = await http.PutAsJsonAsync($"{ApiBaseUrl}collections/{Id}", collection);
+      var response = await http.PutAsJsonAsync($"{ApiBaseUrl}collections/{EditingCollection.Id}", EditingCollection);
       var result = await response.Content.ReadFromJsonAsync<CollectionDto>();
       return true;
     }

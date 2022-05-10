@@ -26,8 +26,7 @@
 
   <div class="mt-4" hidden="@(!_showAddCollection)">
     <CollectionDetailForm HasSaved="CollectionDetailSavedHandler" HasCancelled="CollectionDetailCancelledHandler"
-      Description="@EditingDescription" Name="@EditingName" Id="@EditingCollectionId" Created="@EditingCreated"
-      Modified="@EditingModified">
+      EditingCollection="TargetCollection">
     </CollectionDetailForm>
   </div>
 
@@ -46,7 +45,9 @@
     @foreach (var collection in _collections)
     {
       <tr>
-        <td><a href="/collections/@collection.Id">Details</a></td>
+        <td>@*<a @onclick="(()=>ShowDetail(collection.Id)">Details</a>*@
+          <a @onclick="(()=>OnDelete(collection.Id))">Delete</a>
+        </td>
         <td>@collection.Name</td>
         <td>
           <TableTextDisplay FullText="@collection.Description" />
@@ -56,17 +57,23 @@
   </table>
 </div>
 
+<PromptDialog Show="_showDeleteConfirmation" OnApprove="@(()=>PerformDelete(TargetCollection.Id))"
+  OnDecline="CancelDelete">
+  <p>Do you really want to delete this collection?
+    <strong>@TargetCollection.Name</strong>
+  </p>
+  <p>You will lose access to any contacts in this collection.</p>
+</PromptDialog>
+
+
 @code {
   [CascadingParameter]
   public string ApiBaseUrl { get; set; } = "";
-  public string EditingDescription { get; set; } = "";
-  public DateTime EditingCreated { get; set; }
-  public DateTime EditingModified { get; set; }
-  public string EditingName { get; set; } = "";
-  public int EditingCollectionId { get; set; } = 0;
+  public CollectionDto TargetCollection { get; set; } = new CollectionDto();
   private IEnumerable<CollectionDto> _collections = new List<CollectionDto>();
   private bool _showAddCollection = false;
   private bool _isLoadingCollections = false;
+  private bool _showDeleteConfirmation = false;
 
   protected override async Task OnInitializedAsync()
   {
@@ -96,9 +103,7 @@
     _showAddCollection = !_showAddCollection;
     if (_showAddCollection == false)
     {
-      EditingDescription = "";
-      EditingName = "";
-      EditingCollectionId = 0;
+      TargetCollection = new CollectionDto();
     }
   }
 
@@ -119,5 +124,40 @@
   public void CollectionDetailCancelledHandler()
   {
     _showAddCollection = false;
+  }
+
+  public void OnDelete(int id)
+  {
+    _showAddCollection = false;
+    TargetCollection = _collections.Single(x => x.Id == id);
+    _showDeleteConfirmation = true;
+    Console.WriteLine($"[CollectionsPage] Delete was clicked for {id}.");
+  }
+
+  public void CancelDelete()
+  {
+    _showDeleteConfirmation = false;
+    Console.WriteLine($"[CollectionsPage] Delete was cancelled.");
+  }
+
+  public async Task PerformDelete(int id)
+  {
+    Console.WriteLine($"[CollectionsPage] Performing delete of {id}");
+    try
+    {
+      var response = await http.DeleteAsync($"{ApiBaseUrl}collections/{id}");
+      if (response.IsSuccessStatusCode)
+      {
+        await LoadAllCollections();
+      }
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error deleting contact {id}. {ex.FriendlyMessage()}");
+    }
+    finally
+    {
+      _showDeleteConfirmation = false;
+    }
   }
 }
