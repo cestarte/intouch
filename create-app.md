@@ -97,3 +97,9 @@ Add references to the projects.
 `dotnet add package Microsoft.Extensions.Options --version 6.0.0`
 
 `cd ..`
+
+# Create razor components library
+
+`dotnet new razorclasslib -o components`
+`dotnet sln add components/components.csproj`
+`dotnet add presentation/presentation.csproj reference components/components.csproj`

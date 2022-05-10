@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\application\application.csproj" />
     <ProjectReference Include="..\data\data.csproj" />
+    <ProjectReference Include="..\components\components.csproj" />
   </ItemGroup>
 
 </Project>

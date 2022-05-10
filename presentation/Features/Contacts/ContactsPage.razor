@@ -69,7 +69,9 @@
       <tr>
         <td><a href="/contacts/@contact.Id"><i class="fas fa-arrow-up-right-from-square"></i>Details</a></td>
         <td>@contact.Name</td>
-        <td>@contact.Description</td>
+        <td>
+          <TableTextDisplay FullText="@contact.Description" />
+        </td>
       </tr>
     }
   </table>

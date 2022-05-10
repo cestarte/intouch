@@ -48,7 +48,9 @@
       <tr>
         <td><a href="/collections/@collection.Id">Details</a></td>
         <td>@collection.Name</td>
-        <td>@collection.Description</td>
+        <td>
+          <TableTextDisplay FullText="@collection.Description" />
+        </td>
       </tr>
     }
   </table>
