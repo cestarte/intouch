@@ -1,5 +1,6 @@
 @page "/contacts/{Id:int}"
 @inject HttpClient http
+@inject NavigationManager nav
 
 <PageTitle>In Touch - Contact Detail</PageTitle>
 
@@ -125,11 +126,12 @@
       var response = await http.DeleteAsync($"{ApiBaseUrl}contacts/{Id}");
       if (response.IsSuccessStatusCode)
       {
-        await LoadContact();
+        nav.NavigateTo("/");
       }
     }
     catch (Exception ex)
     {
+      // TODO toast
       Console.WriteLine($"Error deleting contact {Id}. {ex.FriendlyMessage()}");
     }
     finally
