@@ -28,13 +28,20 @@
   @foreach (var method in _contactMethods)
   {
     <tr>
-      <td><a @onclick="@(()=>ShowDetails(method))">Details</a></td>
+      <td><a @onclick="@(()=>ShowDetails(method))">Details</a> <a @onclick="@(()=>OnDelete(method))">Delete</a></td>
       <td>@method.Type</td>
       <td>@method.Value</td>
       <td>@method.Note</td>
     </tr>
   }
 </table>
+
+<PromptDialog Show="_showDeleteConfirmation" OnApprove="@(()=>PerformDelete(SelectedMethod.Id))"
+  OnDecline="CancelDelete">
+  <p>Do you really want to delete this contact method?
+    <strong>@SelectedMethod.Value</strong>
+  </p>
+</PromptDialog>
 
 @code {
   [CascadingParameter]
@@ -44,6 +51,8 @@
   private IEnumerable<ContactMethodDto> _contactMethods = new List<ContactMethodDto>();
   private bool _showAddContactMethod = false;
   private bool _isLoadingContactMethods = false;
+  private bool _showDeleteConfirmation = false;
+
   private ContactMethodDto SelectedMethod { get; set; } = new ContactMethodDto();
 
   protected override async Task OnInitializedAsync()
@@ -118,5 +127,40 @@
     SelectedMethod = new ContactMethodDto();
     SelectedMethod.ContactId = ContactId;
     _showAddContactMethod = true;
+  }
+
+  public void OnDelete(ContactMethodDto method)
+  {
+    _showAddContactMethod = false;
+    SelectedMethod = method;
+    _showDeleteConfirmation = true;
+    Console.WriteLine($"[ContactMethodsForContact] Delete was clicked for {method.Id}.");
+  }
+
+  public void CancelDelete()
+  {
+    _showDeleteConfirmation = false;
+    Console.WriteLine($"[ContactMethodsForContact] Delete was cancelled.");
+  }
+
+  public async Task PerformDelete(int id)
+  {
+    Console.WriteLine($"[ContactMethodsForContact] Performing delete of {id}");
+    try
+    {
+      var response = await http.DeleteAsync($"{ApiBaseUrl}contactmethods/{id}");
+      if (response.IsSuccessStatusCode)
+      {
+        await LoadContactMethodsForContact();
+      }
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"[ContactMethodsForContact] Error deleting contact method {id}. {ex.FriendlyMessage()}");
+    }
+    finally
+    {
+      _showDeleteConfirmation = false;
+    }
   }
 }

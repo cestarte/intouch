@@ -23,14 +23,15 @@
   @if (_isLoadingCommunications)
   {
     <tr>
-      <td colspan="6">Loading..</td>
+      <td colspan="5">Loading..</td>
     </tr>
   }
   @foreach (var communication in _Communications)
   {
     <tr>
-      <td><a @onclick="@(()=>ShowDetails(communication))">Details</a></td>
-      <td>@communication.When</td>
+      <td><a @onclick="@(()=>ShowDetails(communication))">Details</a> <a
+        @onclick="@(()=>OnDelete(communication))">Delete</a></td>
+      <td>@TableFormatters.FormatWhenText(communication.When)</td>
       <td>@communication.Description</td>
       <td>@if (communication.ExpectMeToFollowUp)
         {
@@ -47,6 +48,13 @@
   }
 </table>
 
+<PromptDialog Show="_showDeleteConfirmation" OnApprove="@(()=>PerformDelete(Selectedcommunication.Id))"
+  OnDecline="CancelDelete">
+  <p>Do you really want to delete this communication?</p>
+  <p><strong>@TableFormatters.FormatWhenText(Selectedcommunication.When)</strong></p>
+  <p>@Selectedcommunication.Description</p>
+</PromptDialog>
+
 @code {
   [CascadingParameter]
   public string ApiBaseUrl { get; set; } = "";
@@ -55,6 +63,8 @@
   private IEnumerable<CommunicationDto> _Communications = new List<CommunicationDto>();
   private bool _showAddCommunication = false;
   private bool _isLoadingCommunications = false;
+  private bool _showDeleteConfirmation = false;
+
   private CommunicationDto Selectedcommunication { get; set; } = new CommunicationDto();
 
   protected override async Task OnInitializedAsync()
@@ -121,5 +131,40 @@
     _showAddCommunication = false;
     Selectedcommunication = communication;
     _showAddCommunication = true;
+  }
+
+  public void OnDelete(CommunicationDto communication)
+  {
+    _showAddCommunication = false;
+    Selectedcommunication = communication;
+    _showDeleteConfirmation = true;
+    Console.WriteLine($"[CommunicationForContact] Delete was clicked for {communication.Id}.");
+  }
+
+  public void CancelDelete()
+  {
+    _showDeleteConfirmation = false;
+    Console.WriteLine($"[CommunicationForContact] Delete was cancelled.");
+  }
+
+  public async Task PerformDelete(int id)
+  {
+    Console.WriteLine($"[CommunicationForContact] Performing delete of {id}");
+    try
+    {
+      var response = await http.DeleteAsync($"{ApiBaseUrl}communications/{id}");
+      if (response.IsSuccessStatusCode)
+      {
+        await LoadCommunicationsForContact();
+      }
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"[CommunicationForContact] Error deleting communication {id}. {ex.FriendlyMessage()}");
+    }
+    finally
+    {
+      _showDeleteConfirmation = false;
+    }
   }
 }
